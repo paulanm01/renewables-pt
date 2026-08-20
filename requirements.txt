@@ -1,0 +1,21 @@
+# Web framework and database extensions
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+
+# PostgreSQL driver (version 3, successor to psycopg2 - psycopg2
+# has no prebuilt wheels for Python 3.14 and would try to compile)
+psycopg[binary]
+
+# Data analysis and external API calls
+pandas
+requests
+
+# Reads credentials from the .env file
+python-dotenv
+
+# Scheduler for the daily ingestion job
+APScheduler
+
+# Tests
+pytest

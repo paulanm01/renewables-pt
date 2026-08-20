@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portuguese Renewable Energy Dashboard</title>
+
+    <!-- Chart.js from a CDN: nothing to install -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <style>
+        :root {
+            --bg: #f7f7f5;
+            --card: #ffffff;
+            --ink: #1a1a18;
+            --muted: #6b6b66;
+            --line: #e5e5e0;
+            --accent: #16a34a;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 32px 24px 64px;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+            line-height: 1.5;
+        }
+
+        .wrap { max-width: 1100px; margin: 0 auto; }
+
+        header { margin-bottom: 28px; }
+
+        h1 {
+            font-size: 28px;
+            margin: 0 0 6px;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 15px;
+            margin: 0;
+        }
+
+        /* --- Period buttons --- */
+        .periods {
+            display: flex;
+            gap: 8px;
+            margin: 24px 0;
+        }
+
+        .periods button {
+            padding: 8px 16px;
+            border: 1px solid var(--line);
+            background: var(--card);
+            color: var(--muted);
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .periods button:hover { border-color: var(--accent); }
+
+        .periods button.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        /* --- KPI cards --- */
+        .kpis {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .kpi {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .kpi .label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .kpi .value {
+            font-size: 30px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .kpi .note {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        /* --- Charts --- */
+        .chart-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 20px 24px 24px;
+            margin-bottom: 20px;
+        }
+
+        .chart-card h2 {
+            font-size: 17px;
+            margin: 0 0 4px;
+        }
+
+        .chart-card p {
+            font-size: 13px;
+            color: var(--muted);
+            margin: 0 0 18px;
+        }
+
+        .chart-box { position: relative; height: 340px; }
+
+        footer {
+            margin-top: 32px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        footer p { margin: 0 0 8px; }
+
+        #error {
+            display: none;
+            background: #fdecea;
+            border: 1px solid #f5c2bd;
+            color: #8a2018;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <header>
+            <h1>Portuguese Renewable Energy</h1>
+            <p class="subtitle">
+                National electricity production (REN) cross-referenced
+                with weather data (Open-Meteo)
+            </p>
+        </header>
+
+        <div id="error"></div>
+
+        <div class="periods">
+            <button data-days="30">30 days</button>
+            <button data-days="90">90 days</button>
+            <button data-days="180" class="active">180 days</button>
+        </div>
+
+        <section class="kpis">
+            <div class="kpi">
+                <div class="label">Renewable share</div>
+                <div class="value" id="kpi-pct">—</div>
+                <div class="note" id="kpi-pct-note">period average</div>
+            </div>
+            <div class="kpi">
+                <div class="label">Best day</div>
+                <div class="value" id="kpi-best">—</div>
+                <div class="note" id="kpi-best-note">&nbsp;</div>
+            </div>
+            <div class="kpi">
+                <div class="label">Most volatile source</div>
+                <div class="value" id="kpi-volatile">—</div>
+                <div class="note">highest relative variation</div>
+            </div>
+        </section>
+
+        <div class="chart-card">
+            <h2>Daily average production by source</h2>
+            <p>Values in MW (daily average power, not accumulated energy)</p>
+            <div class="chart-box">
+                <canvas id="timeline"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h2>Weather and production correlation</h2>
+            <p>
+                Pearson coefficient between each weather variable
+                (5-city average) and hourly production of each source
+            </p>
+            <div class="chart-box">
+                <canvas id="correlation"></canvas>
+            </div>
+        </div>
+
+        <footer>
+            <p>
+                Sources: REN DataHub and Open-Meteo. Weather is the average of
+                Lisbon, Porto, Faro, Évora and Bragança — a proxy for national
+                conditions, since production is reported at country level.
+                Source names appear in Portuguese as returned by the REN API.
+            </p>
+
+            <p>&copy; Developed by Paula Modesto &middot; 2026</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

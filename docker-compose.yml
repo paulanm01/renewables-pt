@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16
+    # Own name so it does not clash with other project containers
+    container_name: renewables_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: renewables_user
+      POSTGRES_PASSWORD: renewables_pass
+      POSTGRES_DB: renewables
+    ports:
+      # 5434 on the host -> 5432 inside the container.
+      # A locally installed PostgreSQL already holds 5432.
+      - "5434:5432"
+    volumes:
+      # Own volume: data survives 'docker compose down'.
+      # Note: 'docker compose down -v' would delete it.
+      - renewables_pgdata:/var/lib/postgresql/data
+
+volumes:
+  renewables_pgdata:
