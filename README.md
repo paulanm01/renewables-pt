@@ -109,12 +109,15 @@ pip install -r requirements.txt
 
 ### 2. Environment variables
 
-Create a `.env` file in the project root:
+### 2. Environment variables
 
+Copy the example file and fill in your own values:
+
+```bash
+cp .env.example .env
 ```
-DATABASE_URL=postgresql+psycopg://renewables_user:renewables_pass@localhost:5434/renewables
-SECRET_KEY=change-me
-```
+
+The `.env` file holds the database credentials and is not versioned.
 
 ### 3. Start PostgreSQL
 
